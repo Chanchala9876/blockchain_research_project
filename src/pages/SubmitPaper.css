@@ -1,0 +1,285 @@
+.submit-paper-page {
+  padding-top: 100px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.submit-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  padding: 2rem 0;
+}
+
+.form-section,
+.results-section {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.form-section h2,
+.results-section h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group small {
+  display: block;
+  color: #666;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.hash-input {
+  display: flex;
+  gap: 1rem;
+}
+
+.hash-input input {
+  flex: 1;
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+
+.hash-input button {
+  white-space: nowrap;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.action-buttons .btn {
+  flex: 1;
+}
+
+/* Processing State */
+.processing {
+  text-align: center;
+  padding: 2rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.processing p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+/* Plagiarism Results */
+.plagiarism-result {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.score-card {
+  text-align: center;
+  padding: 2rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+}
+
+.score-card.low {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 2px solid #10b981;
+}
+
+.score-card.high {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 2px solid #ef4444;
+}
+
+.score-card h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.score {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.score-card.low .score {
+  color: #10b981;
+}
+
+.score-card.high .score {
+  color: #ef4444;
+}
+
+.status {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.score-card.low .status {
+  color: #065f46;
+}
+
+.score-card.high .status {
+  color: #991b1b;
+}
+
+.details {
+  margin-bottom: 2rem;
+}
+
+.details h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.source {
+  font-weight: 500;
+  color: #333;
+}
+
+.similarity {
+  font-weight: 600;
+  color: #667eea;
+}
+
+.recommendation {
+  background: #f0f9ff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border-left: 4px solid #667eea;
+}
+
+.recommendation h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.recommendation p {
+  color: #666;
+  line-height: 1.6;
+  margin: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .submit-content {
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .submit-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .form-section,
+  .results-section {
+    padding: 2rem;
+  }
+
+  .hash-input {
+    flex-direction: column;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .score {
+    font-size: 2.5rem;
+  }
+
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-section,
+  .results-section {
+    padding: 1.5rem;
+  }
+
+  .score-card {
+    padding: 1.5rem;
+  }
+
+  .score {
+    font-size: 2rem;
+  }
+}
