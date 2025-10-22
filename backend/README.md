@@ -2,96 +2,163 @@
 
 This is the backend API for the Blockchain Research Project, built with Spring Boot and integrated with Hyperledger Fabric for blockchain functionality.
 
-## Features
+## 🚀 Features
 
-- **Multi-University Support**: Complete institute-aware architecture with separate data for different universities
-- **AI-Powered Thesis Verification**: Advanced similarity detection using Ollama AI with role-based reporting
-- **Blockchain Integration**: Hyperledger Fabric integration for immutable research paper records
-- **Enhanced Security**: JWT-based authentication with role-based access control
-- **Document Processing**: Support for both PDF and DOCX document uploads and text extraction
+### ✅ Multi-University Support
+- **Institute-aware architecture**: Complete data segregation by university/institute
+- **Cross-institute functionality**: Admins, professors, and students linked to specific institutes
+- **Institute-specific uploads**: Papers automatically associated with admin's institute
 
-## Technology Stack
+### ✅ AI-Powered Thesis Verification
+- **Advanced similarity detection**: Using Ollama AI (nomic-embed-text model)
+- **Enhanced thresholds**: Improved from 30% to 15% for better small-change detection
+- **Role-based reporting**: 
+  - **Professors**: See full author details and university information
+  - **Students**: See only similarity percentages for privacy
+
+### ✅ Document Processing
+- **PDF Support**: Advanced text extraction using PDFBox
+- **DOCX Support**: Microsoft Word document processing with Apache POI
+- **Unified processing**: Seamless handling of both document types
+
+### ✅ Blockchain Integration
+- **Hyperledger Fabric**: Immutable research paper records
+- **Simulation mode**: Works without Fabric network for development
+- **Paper hashing**: SHA-256 content verification
+
+### ✅ Security & Authentication
+- **JWT-based authentication**: Secure token-based access
+- **Role-based access control**: Admin, Professor, Student roles
+- **Cross-site protection**: CORS configuration and security filters
+
+## 🛠 Technology Stack
 
 - **Framework**: Spring Boot 3.1.5
 - **Database**: MongoDB with Spring Data
-- **Authentication**: JWT with Spring Security
-- **AI Integration**: Ollama (nomic-embed-text model) for similarity analysis
-- **Blockchain**: Hyperledger Fabric integration
-- **Document Processing**: Apache POI for DOCX, PDFBox for PDF
+- **Authentication**: JWT with Spring Security  
+- **AI Integration**: Ollama (nomic-embed-text model)
+- **Blockchain**: Hyperledger Fabric
+- **Document Processing**: Apache POI (DOCX), PDFBox (PDF)
 - **Build Tool**: Maven
 
-## Key Models
+## 📊 Database Models
 
-- **Institute**: Multi-university support with institute-specific data segregation
-- **Admin/Professor/User**: Role-based users with institute associations
-- **ResearchPaper**: Papers linked to specific institutes with blockchain integration
-- **ThesisVerification**: AI-powered similarity checking with enhanced thresholds
+### Institute
+- Multi-university support with complete institutional data
+- Links to admins, professors, and research papers
 
-## Recent Enhancements
+### User Roles
+- **Admin**: University administrators with institute-specific access
+- **Professor**: Faculty members with research oversight capabilities  
+- **User/Student**: Students with thesis submission and verification access
 
-### Multi-University Architecture ✅
-- Added `instituteId` fields to all models (Admin, User, Professor, ResearchPaper)
-- Institute-aware upload validation and data segregation
-- Cross-institute similarity checking capabilities
+### ResearchPaper
+- Institute-linked papers with blockchain integration
+- AI embeddings for similarity analysis
+- Comprehensive metadata and file storage
 
-### Enhanced Similarity Detection ✅
-- Lowered similarity thresholds from 30% to 15% for better detection
-- Role-based reporting (Professors see author details, Students see percentages only)
-- Support for both PDF and Word document processing
-- Improved duplicate detection with content similarity analysis
+## 🔧 Quick Start
 
-### Fixed Admin Upload Issues ✅
-- Resolved 400 errors in admin uploads by ensuring proper `instituteId` assignment
-- Enhanced data initialization with automatic admin-institute linking
-- Proper validation for cross-institute upload prevention
+### Prerequisites
+- **Java 17+** 
+- **MongoDB** running on localhost:27017
+- **Ollama** with nomic-embed-text model installed
+- **Docker** (optional, for Hyperledger Fabric)
 
-## Quick Start
+### Installation & Running
 
-1. **Prerequisites**:
-   - Java 17+
-   - MongoDB running on localhost:27017
-   - Ollama with nomic-embed-text model installed
+1. **Clone and navigate**:
+   ```bash
+   cd backend
+   ```
 
-2. **Run the application**:
+2. **Install dependencies and run**:
    ```bash
    ./mvnw spring-boot:run
    ```
 
 3. **Access the API**: http://localhost:8090
 
-## Demo Accounts
+## 👥 Demo Accounts
 
 All demo accounts use password: `1234`
 
-### JNU Admins:
-- `admin.super@jnu.ac.in` - Super Admin
-- `admin.system@jnu.ac.in` - System Admin
+### JNU University
+- **Super Admin**: `admin.super@jnu.ac.in`
+- **System Admin**: `admin.system@jnu.ac.in`
 
-### IIT Delhi Admins:
-- `admin.academic@iitd.ac.in` - Academic Admin
-- `admin.research@iitd.ac.in` - Research Admin
+### IIT Delhi  
+- **Academic Admin**: `admin.academic@iitd.ac.in`
+- **Research Admin**: `admin.research@iitd.ac.in`
 
-## API Endpoints
+## 🔗 API Endpoints
 
-- **Authentication**: `/api/auth/*`
-- **Admin Operations**: `/api/admin/*`
-- **Research Papers**: `/api/research-papers/*`
-- **Thesis Verification**: `/api/thesis/verify`
-- **Blockchain**: `/api/blockchain/*`
+| Endpoint | Description |
+|----------|-------------|
+| `/api/auth/*` | Authentication (login, register) |
+| `/api/admin/*` | Admin operations and management |
+| `/api/research-papers/*` | Paper upload and management |
+| `/api/thesis/verify` | AI-powered thesis verification |
+| `/api/blockchain/*` | Blockchain record operations |
+| `/api/institutes/*` | Institute management |
 
-## Configuration
+## ⚙ Configuration Files
 
-Key configuration files:
 - `application.properties` - Database and application settings
-- `fabric/network-config.yaml` - Hyperledger Fabric configuration
-- `DataInitializer.java` - Demo data setup with multi-institute support
+- `fabric/network-config.yaml` - Hyperledger Fabric configuration  
+- `DataInitializer.java` - Demo data with multi-institute setup
 
-## Development Status
+## 🎯 Recent Enhancements
 
-- ✅ Multi-university architecture implemented
-- ✅ Enhanced similarity detection with role-based reporting
-- ✅ Admin upload validation fixed
-- ✅ Blockchain integration working (simulation mode)
-- ⏳ Institute-aware similarity comparison (future enhancement)
+### Fixed Issues ✅
+- **Admin Upload Validation**: Resolved 400 errors by ensuring proper `instituteId` assignment
+- **Similarity Detection**: Enhanced thresholds and role-based messaging
+- **Data Initialization**: Improved admin-institute linking and validation
 
-For setup instructions, see `FABRIC_SETUP.md` and `MONGODB_SETUP.md`.
+### New Features ✅  
+- **Multi-University Architecture**: Complete institute-aware data segregation
+- **Enhanced AI Analysis**: Better similarity detection with contextual reporting
+- **Document Format Support**: Both PDF and Word document processing
+- **Role-Based Security**: Granular access control by user type
+
+## 📈 Development Status
+
+- ✅ **Multi-university architecture** - Complete
+- ✅ **Enhanced similarity detection** - Complete  
+- ✅ **Admin upload validation** - Fixed
+- ✅ **Blockchain integration** - Working (simulation mode)
+- ✅ **Document processing** - PDF + DOCX support
+- 🔄 **Institute-aware similarity** - Future enhancement
+
+## 📚 Setup Guides
+
+- **Fabric Setup**: See `FABRIC_SETUP.md`
+- **MongoDB Setup**: See `MONGODB_SETUP.md`
+- **Application Help**: See `HELP.md`
+
+## 🏗 Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   Frontend (React)                  │
+└─────────────────┬───────────────────────────────────┘
+                  │ HTTP/REST API
+┌─────────────────▼───────────────────────────────────┐
+│                Spring Boot Backend                  │
+│  ┌─────────────┬─────────────┬─────────────────────┐ │
+│  │ Controllers │  Services   │     Repositories    │ │
+│  └─────────────┴─────────────┴─────────────────────┘ │
+└─────────────────┬───────────────────────────┬───────┘
+                  │                           │
+        ┌─────────▼─────────┐       ┌─────────▼─────────┐
+        │     MongoDB       │       │  Hyperledger      │
+        │   (Data Store)    │       │     Fabric        │
+        └───────────────────┘       └───────────────────┘
+                  │
+        ┌─────────▼─────────┐
+        │      Ollama       │
+        │   (AI Analysis)   │
+        └───────────────────┘
+```
+
+This backend provides a comprehensive, scalable solution for multi-university thesis verification with advanced AI capabilities and blockchain integration.
