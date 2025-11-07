@@ -28,8 +28,17 @@ public class ResearchPaperController {
     @Autowired
     private ResearchPaperService researchPaperService;
     
+    @Autowired
+    private com.example.demo.services.ThesisVerificationService thesisVerificationService;
+    
+    @Autowired
+    private com.example.demo.services.PendingThesisService pendingThesisService;
+    
     /**
-     * Upload a new research paper (Admin only) - Supports PDF and DOCX formats
+     * Upload a new research paper for multi-admin approval (Admin only)
+     * - Runs AI verification to detect duplicates
+     * - If unique, stores in pending_thesis (NOT blockchain yet)
+     * - Requires approval from other admins before blockchain submission
      */
     @PostMapping("/upload")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
@@ -43,16 +52,193 @@ public class ResearchPaperController {
             @RequestParam("abstractText") String abstractText,
             @RequestParam("keywords") String keywords,
             @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "validationDocument", required = true) MultipartFile validationDocument,
             @RequestParam("uploadedBy") String uploadedBy) {
         
         try {
-            log.info("Received research paper upload request for title: {}", title);
+            log.info("📝 Received research paper upload request for title: {}", title);
+            log.info("👤 Uploaded by admin: {}", uploadedBy);
             
             // Parse keywords
             List<String> keywordList = Arrays.asList(keywords.split(","));
             keywordList.replaceAll(String::trim);
             
-            // Upload and process the paper
+            // ===== STEP 1: AI VERIFICATION TO DETECT DUPLICATES =====
+            log.info("🤖 Running AI verification to check for duplicates...");
+            com.example.demo.dto.ThesisVerificationRequest verifyReq = new com.example.demo.dto.ThesisVerificationRequest();
+            verifyReq.setTitle(title);
+            verifyReq.setAuthor(author);
+            verifyReq.setDepartment(department);
+            verifyReq.setInstitution(institution);
+            verifyReq.setAbstractText(abstractText);
+            verifyReq.setKeywords(keywordList);
+            verifyReq.setSupervisor(supervisor);
+            verifyReq.setCoSupervisor(coSupervisor);
+            verifyReq.setSubmissionYear(java.time.LocalDate.now().getYear());
+
+            try {
+                com.example.demo.dto.ThesisVerificationResponse verification = thesisVerificationService.verifyThesis(verifyReq, file, "ADMIN");
+
+                if (verification != null) {
+                    String matchType = verification.getMatchType();
+                    Double similarityScore = verification.getSimilarityScore();
+                    Double plagiarismScore = verification.getPlagiarismScore();
+                    
+                    log.info("📊 AI Verification Results - Match Type: {}, Similarity: {}%, Plagiarism: {}%", 
+                        matchType, similarityScore, plagiarismScore);
+                    
+                    // Enhanced duplicate detection
+                    boolean isDuplicate = "EXACT_MATCH".equals(matchType)
+                            || "IDENTICAL_CONTENT".equals(matchType)
+                            || "EXACT_TITLE_MATCH".equals(matchType)
+                            || (plagiarismScore != null && plagiarismScore >= 80.0)
+                            || (similarityScore != null && similarityScore >= 85.0);
+
+                    if (isDuplicate) {
+                        log.warn("⚠️ DUPLICATE DETECTED! Similarity: {}%, Plagiarism: {}%", similarityScore, plagiarismScore);
+                        Map<String, Object> dupResp = new HashMap<>();
+                        dupResp.put("success", false);
+                        dupResp.put("message", verification.getMessage() != null ? verification.getMessage() : 
+                            String.format("⚠️ DUPLICATE THESIS DETECTED: This thesis appears to be very similar (%.1f%% similarity, %.1f%% plagiarism risk) to an existing paper in our blockchain database. Upload rejected.", 
+                                similarityScore != null ? similarityScore : 0.0, 
+                                plagiarismScore != null ? plagiarismScore : 0.0));
+                        dupResp.put("matchType", verification.getMatchType());
+                        dupResp.put("similarityScore", verification.getSimilarityScore());
+                        dupResp.put("plagiarismScore", verification.getPlagiarismScore());
+                        dupResp.put("aiAnalysis", verification.getAiAnalysis());
+                        if (verification.getPaper() != null) {
+                            Map<String, Object> existingPaper = new HashMap<>();
+                            existingPaper.put("id", verification.getPaper().getId());
+                            existingPaper.put("title", verification.getPaper().getTitle());
+                            existingPaper.put("author", verification.getPaper().getAuthor());
+                            existingPaper.put("department", verification.getPaper().getDepartment());
+                            existingPaper.put("institution", verification.getPaper().getInstitution());
+                            existingPaper.put("uploadedDate", verification.getPaper().getUploadedDate());
+                            dupResp.put("existingPaper", existingPaper);
+                        }
+                        return ResponseEntity.status(409).body(dupResp);
+                    }
+                    
+                    log.info("✅ AI Verification passed - Thesis is unique, proceeding to pending approval workflow");
+                }
+            } catch (Exception ex) {
+                log.warn("⚠️ AI verification failed, continuing with upload: {}", ex.getMessage());
+            }
+
+            // ===== STEP 2: STORE IN PENDING_THESIS (NOT BLOCKCHAIN YET) =====
+            log.info("📋 Storing thesis in pending_thesis table for multi-admin approval...");
+            
+            com.example.demo.models.PendingThesis pendingThesis = pendingThesisService.submitThesisForApproval(
+                title, author, department, institution, supervisor, coSupervisor,
+                abstractText, keywordList, uploadedBy, file, validationDocument);
+            
+            log.info("✅ Thesis submitted to pending approval workflow");
+            log.info("📊 Approval Status: {} / {} admins approved", 
+                pendingThesis.getCurrentApprovals(), pendingThesis.getTotalAdminsRequired());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", String.format(
+                "Thesis submitted successfully! Waiting for approval from %d other admin(s). Once all admins approve, it will be added to the blockchain.",
+                pendingThesis.getTotalAdminsRequired()));
+            response.put("pendingThesisId", pendingThesis.getId());
+            response.put("title", pendingThesis.getTitle());
+            response.put("author", pendingThesis.getAuthor());
+            response.put("status", pendingThesis.getStatus());
+            response.put("currentApprovals", pendingThesis.getCurrentApprovals());
+            response.put("totalAdminsRequired", pendingThesis.getTotalAdminsRequired());
+            response.put("approvalProgress", pendingThesis.getApprovalProgress());
+            response.put("submittedAt", pendingThesis.getCreatedAt());
+            response.put("storedOnBlockchain", false); // Not yet on blockchain
+            response.put("needsApproval", true);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            log.error("❌ Invalid upload request: {}", e.getMessage());
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("error", e.getMessage());
+            
+            return ResponseEntity.badRequest().body(errorResponse);
+            
+        } catch (Exception e) {
+            log.error("❌ Error uploading research paper: {}", e.getMessage(), e);
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Failed to upload research paper");
+            errorResponse.put("error", e.getMessage());
+            
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+    
+    /**
+     * Get all approved blockchain records (Admin only)
+     */
+    @GetMapping("/blockchain-records")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Map<String, Object>> getBlockchainRecords(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        
+        try {
+            log.info("📚 Fetching blockchain records - Page: {}, Size: {}", page, size);
+            
+            Pageable pageable = PageRequest.of(page, size, Sort.by("uploadedDate").descending());
+            Page<ResearchPaper> papers = researchPaperService.getResearchPapersByStatus("VERIFIED", pageable);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("records", papers.getContent());
+            response.put("currentPage", papers.getNumber());
+            response.put("totalItems", papers.getTotalElements());
+            response.put("totalPages", papers.getTotalPages());
+            response.put("message", String.format("Retrieved %d blockchain records", papers.getContent().size()));
+            
+            log.info("✅ Retrieved {} blockchain records", papers.getContent().size());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("❌ Error fetching blockchain records: {}", e.getMessage(), e);
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Failed to fetch blockchain records");
+            errorResponse.put("error", e.getMessage());
+            
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+    
+    /**
+     * Upload a new research paper DIRECTLY to blockchain (for backwards compatibility)
+     * This bypasses the approval workflow - use with caution!
+     */
+    @PostMapping("/upload-direct")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Map<String, Object>> uploadResearchPaperDirect(
+            @RequestParam("title") String title,
+            @RequestParam("author") String author,
+            @RequestParam("department") String department,
+            @RequestParam("institution") String institution,
+            @RequestParam("supervisor") String supervisor,
+            @RequestParam(value = "coSupervisor", required = false) String coSupervisor,
+            @RequestParam("abstractText") String abstractText,
+            @RequestParam("keywords") String keywords,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("uploadedBy") String uploadedBy) {
+        
+        try {
+            log.info("⚠️ DIRECT upload (bypasses approval workflow) for title: {}", title);
+            
+            List<String> keywordList = Arrays.asList(keywords.split(","));
+            keywordList.replaceAll(String::trim);
+            
             ResearchPaper savedPaper = researchPaperService.uploadResearchPaper(
                 title, author, department, institution, supervisor, coSupervisor,
                 abstractText, keywordList, file, uploadedBy);
@@ -271,6 +457,46 @@ public class ResearchPaperController {
             errorResponse.put("error", e.getMessage());
             
             return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+    
+    /**
+     * Update paper viewability (Admin only)
+     */
+    @PutMapping("/{paperId}/viewability")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> updatePaperViewability(
+            @PathVariable String paperId,
+            @RequestParam boolean viewable) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            log.info("Admin updating paper {} viewability to: {}", paperId, viewable);
+            
+            boolean success = researchPaperService.updatePaperViewability(paperId, viewable);
+            
+            if (success) {
+                response.put("success", true);
+                response.put("message", "Paper viewability updated successfully");
+                response.put("paperId", paperId);
+                response.put("viewable", viewable);
+                
+                log.info("Successfully updated paper {} viewability to: {}", paperId, viewable);
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Paper not found");
+                return ResponseEntity.notFound().build();
+            }
+            
+        } catch (Exception e) {
+            log.error("Error updating paper viewability for paper: {}", paperId, e);
+            response.put("success", false);
+            response.put("message", "Failed to update paper viewability");
+            response.put("error", e.getMessage());
+            
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

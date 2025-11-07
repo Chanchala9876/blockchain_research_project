@@ -1,0 +1,402 @@
+/* Enhanced AI Analysis Styles for VerifyPaper Component */
+
+/* AI Analysis Container */
+.ai-analysis-container {
+  background: linear-gradient(135deg, #f8faff 0%, #e8f4f8 100%);
+  border: 2px solid #e1ecf4;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.ai-analysis-container h3 {
+  color: #2c5282;
+  margin-bottom: 20px;
+  font-size: 1.4em;
+  border-bottom: 2px solid #4299e1;
+  padding-bottom: 8px;
+}
+
+/* AI Analysis Sections */
+.ai-section {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0;
+  border-left: 4px solid #4299e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ai-section h4 {
+  color: #2d3748;
+  margin-bottom: 8px;
+  font-size: 1.2em;
+}
+
+.ai-section h5 {
+  color: #4a5568;
+  margin-bottom: 12px;
+  font-size: 1.1em;
+}
+
+.section-description {
+  color: #718096;
+  font-style: italic;
+  margin-bottom: 16px;
+  font-size: 0.95em;
+}
+
+/* Similarity Section Specific */
+.similarity-section {
+  border-left-color: #38b2ac;
+}
+
+.similarity-section h4 {
+  color: #38b2ac;
+}
+
+/* AI Detection Section Specific */
+.ai-detection-section {
+  border-left-color: #ed8936;
+}
+
+.ai-detection-section h4 {
+  color: #ed8936;
+}
+
+/* Metrics Grid - Updated for better layout */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.metric {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.metric-label {
+  font-size: 0.85em;
+  color: #718096;
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #2d3748;
+  margin: 8px 0;
+}
+
+.metric-status {
+  font-size: 0.9em;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 20px;
+  margin-top: 8px;
+}
+
+/* Status Color Coding */
+.metric-status {
+  background-color: #e6fffa;
+  color: #38b2ac;
+}
+
+/* AI Detection Results */
+.ai-detection-results {
+  background: #fefefe;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.ai-detection-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fff5f0 0%, #fed7c3 100%);
+  border-radius: 8px;
+  border: 2px solid #fbb6ce;
+}
+
+.detection-label {
+  font-size: 1em;
+  color: #744210;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detection-value {
+  font-size: 2.5em;
+  font-weight: bold;
+  color: #c53030;
+  margin: 8px 0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.detection-status {
+  font-size: 1em;
+  font-weight: bold;
+  padding: 6px 16px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* AI Detection Status Colors */
+.detection-status.high-risk {
+  background-color: #feb2b2;
+  color: #c53030;
+}
+
+.detection-status.moderate-risk {
+  background-color: #fbd38d;
+  color: #d69e2e;
+}
+
+.detection-status.low-moderate-risk {
+  background-color: #fef5e7;
+  color: #d69e2e;
+}
+
+.detection-status.low-risk {
+  background-color: #c6f6d5;
+  color: #38a169;
+}
+
+.detection-status.very-low-risk {
+  background-color: #e6fffa;
+  color: #319795;
+}
+
+/* AI Conclusion */
+.ai-conclusion {
+  background: #f7fafc;
+  border-left: 4px solid #4299e1;
+  padding: 16px;
+  margin: 16px 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.conclusion-title {
+  font-weight: bold;
+  color: #2c5282;
+  margin-bottom: 8px;
+}
+
+.conclusion-text {
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+/* AI Indicators */
+.ai-indicators {
+  margin-top: 20px;
+}
+
+.indicators-title {
+  font-weight: bold;
+  color: #2d3748;
+  margin-bottom: 12px;
+  font-size: 1.05em;
+}
+
+.indicators-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.indicator-item {
+  background: #f1f5f9;
+  border-left: 3px solid #f56565;
+  padding: 8px 12px;
+  margin: 6px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.9em;
+  color: #2d3748;
+  transition: background-color 0.2s;
+}
+
+.indicator-item:hover {
+  background: #e2e8f0;
+}
+
+.indicator-more {
+  background: #edf2f7;
+  border-left: 3px solid #a0aec0;
+  padding: 8px 12px;
+  margin: 6px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.9em;
+  color: #718096;
+  font-style: italic;
+}
+
+/* Similar Papers List */
+.similar-papers {
+  margin-top: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.similar-papers h5 {
+  color: #2c5282;
+  margin-bottom: 12px;
+  font-size: 1.1em;
+}
+
+.similar-papers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.similar-paper-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  transition: box-shadow 0.2s;
+}
+
+.similar-paper-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.paper-info {
+  flex: 1;
+}
+
+.paper-title {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 4px;
+  font-size: 0.95em;
+}
+
+.paper-author {
+  font-size: 0.85em;
+  color: #718096;
+}
+
+.similarity-score {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #e53e3e;
+  background: #fed7d7;
+  padding: 4px 8px;
+  border-radius: 4px;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Enhanced Progress Text */
+.progress-text {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 0.9em;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+/* Enhanced Status Cards */
+.status-card.verified {
+  background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+  border-color: #38a169;
+}
+
+.status-card.not-verified {
+  background: linear-gradient(135deg, #fffaf0 0%, #fbd38d 100%);
+  border-color: #d69e2e;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .ai-analysis-container {
+    padding: 16px;
+    margin: 16px 0;
+  }
+  
+  .ai-section {
+    padding: 16px;
+    margin: 12px 0;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .detection-value {
+    font-size: 2em;
+  }
+  
+  .similar-paper-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .similarity-score {
+    align-self: flex-end;
+  }
+}
+
+/* Animation for Results */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-analysis-container {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.ai-section {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+/* Print Styles */
+@media print {
+  .ai-analysis-container {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 2px solid #000;
+  }
+  
+  .ai-section {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+}

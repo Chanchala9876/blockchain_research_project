@@ -75,7 +75,7 @@ public class SecurityConfig {
                                     "/api/blockchain-viewer/**", "/api/debug/**", "/debug/**", "/signup", "/login", "/api/professors/login", "/api/professors/direct-login", 
                                     "/api/professors/list", "/api/professors/info/**", "/api/admins/login", 
                                     "/api/admins/validate", "/api/admins/verify-otp", "/api/papers/verify-thesis", "/api/papers/search", 
-                                    "/api/papers/verification-health", "/api/papers/verification-stats", "/api/institutes/**").permitAll()
+                                    "/api/papers/verification-health", "/api/papers/verification-stats", "/api/institutes/**", "/api/public/**", "/api/admin/migration/**").permitAll()
                     .anyRequest().authenticated()
             );
         
@@ -87,10 +87,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("*")); // Allow all origins with credentials
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowedHeaders(Arrays.asList("*")); // Allow all headers
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

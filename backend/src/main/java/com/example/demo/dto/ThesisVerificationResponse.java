@@ -70,6 +70,11 @@ public class ThesisVerificationResponse {
         private Integer matchedPapersCount;
         private List<SimilarPaper> topMatches;
         
+        // AI Detection results
+        private Double aiDetectionScore;
+        private String aiDetectionConclusion;
+        private List<String> aiDetectionIndicators;
+        
         public AIAnalysis() {}
         
         public AIAnalysis(Double embeddingScore, Double titleSimilarity, Double contentSimilarity) {
@@ -78,7 +83,7 @@ public class ThesisVerificationResponse {
             this.contentSimilarity = contentSimilarity;
         }
         
-        // Getters and Setters
+        // Getters and Setters for existing fields
         public Double getEmbeddingScore() { return embeddingScore; }
         public void setEmbeddingScore(Double embeddingScore) { this.embeddingScore = embeddingScore; }
         
@@ -93,6 +98,16 @@ public class ThesisVerificationResponse {
         
         public List<SimilarPaper> getTopMatches() { return topMatches; }
         public void setTopMatches(List<SimilarPaper> topMatches) { this.topMatches = topMatches; }
+        
+        // Getters and Setters for AI Detection
+        public Double getAiDetectionScore() { return aiDetectionScore; }
+        public void setAiDetectionScore(Double aiDetectionScore) { this.aiDetectionScore = aiDetectionScore; }
+        
+        public String getAiDetectionConclusion() { return aiDetectionConclusion; }
+        public void setAiDetectionConclusion(String aiDetectionConclusion) { this.aiDetectionConclusion = aiDetectionConclusion; }
+        
+        public List<String> getAiDetectionIndicators() { return aiDetectionIndicators; }
+        public void setAiDetectionIndicators(List<String> aiDetectionIndicators) { this.aiDetectionIndicators = aiDetectionIndicators; }
     }
     
     // Inner class for similar paper matches

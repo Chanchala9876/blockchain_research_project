@@ -1,0 +1,414 @@
+/* Additional CSS for Multi-Admin Approval Workflow */
+
+/* Validation Document Section */
+.validation-document-section {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.validation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 15px;
+  color: #856404;
+}
+
+.validation-badge {
+  background: #ffc107;
+  color: #000;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.validation-viewer {
+  background: white;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.document-info {
+  margin-bottom: 12px;
+}
+
+.document-info p {
+  margin: 6px 0;
+  font-size: 13px;
+  color: #495057;
+}
+
+.document-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.btn-view-doc,
+.btn-download-doc {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-view-doc {
+  background: #007bff;
+  color: white;
+  border: 2px solid #007bff;
+}
+
+.btn-view-doc:hover {
+  background: #0056b3;
+  border-color: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.btn-download-doc {
+  background: white;
+  color: #28a745;
+  border: 2px solid #28a745;
+}
+
+.btn-download-doc:hover {
+  background: #28a745;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.validation-notice {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 10px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #856404;
+  border-radius: 4px;
+}
+
+/* Approval Progress Bar */
+.approval-progress {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.progress-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.progress-percentage {
+  font-weight: bold;
+  color: #28a745;
+  font-size: 16px;
+}
+
+.progress-bar {
+  height: 24px;
+  background: #e9ecef;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745, #20c997);
+  transition: width 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.approved-by {
+  margin-top: 10px;
+  padding: 8px;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #155724;
+}
+
+.approved-by strong {
+  color: #155724;
+}
+
+/* Status Badge Updates */
+.status-badge.pending {
+  background: #ffc107;
+  color: #000;
+}
+
+.status-badge.approved {
+  background: #28a745;
+  color: white;
+}
+
+.status-badge.rejected {
+  background: #dc3545;
+  color: white;
+}
+
+/* Info and Success Messages */
+.info-message {
+  padding: 12px 16px;
+  background: #d1ecf1;
+  border: 1px solid #bee5eb;
+  border-radius: 6px;
+  color: #0c5460;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.success-message {
+  padding: 12px 16px;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 6px;
+  color: #155724;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Badge on Nav Tab */
+.nav-tab .badge {
+  background: #dc3545;
+  color: white;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+/* Pending Card Highlights */
+.pending-card.own-upload {
+  border-left: 4px solid #007bff;
+}
+
+.pending-card.already-approved {
+  border-left: 4px solid #28a745;
+  opacity: 0.85;
+}
+
+/* Action Buttons Styling */
+.approval-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.approval-actions .btn {
+  flex: 1;
+  min-width: 150px;
+}
+
+.approval-actions .btn-success {
+  background: #28a745;
+  border-color: #28a745;
+}
+
+.approval-actions .btn-success:hover {
+  background: #218838;
+  border-color: #1e7e34;
+}
+
+.approval-actions .btn-danger {
+  background: #dc3545;
+  border-color: #dc3545;
+}
+
+.approval-actions .btn-danger:hover {
+  background: #c82333;
+  border-color: #bd2130;
+}
+
+/* Blockchain Info Section */
+.blockchain-info {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.blockchain-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.blockchain-row:last-child {
+  margin-bottom: 0;
+}
+
+.blockchain-row .label {
+  font-weight: 600;
+  color: #495057;
+  min-width: 150px;
+}
+
+.blockchain-row .value {
+  color: #6c757d;
+  word-break: break-all;
+}
+
+.hash-value {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  background: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .approval-actions {
+    flex-direction: column;
+  }
+  
+  .approval-actions .btn {
+    width: 100%;
+  }
+  
+  .progress-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+/* Empty State Improvements */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.empty-state h3 {
+  color: #495057;
+  margin-bottom: 10px;
+}
+
+.empty-state p {
+  color: #6c757d;
+  margin-bottom: 30px;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error Banner */
+.error-banner {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 12px 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-icon {
+  font-size: 20px;
+}
+
+/* Records Summary Stats */
+.records-summary {
+  margin-top: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.summary-item {
+  text-align: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.summary-number {
+  display: block;
+  font-size: 32px;
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 8px;
+}
+
+.summary-label {
+  display: block;
+  font-size: 14px;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}

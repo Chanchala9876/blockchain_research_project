@@ -69,4 +69,53 @@ public interface ResearchPaperRepository extends MongoRepository<ResearchPaper, 
      */
     @Query("{ $or: [ { 'documentEmbedding': { $exists: false } }, { 'documentEmbedding': null } ] }")
     List<ResearchPaper> findPapersWithoutEmbeddings();
+    
+    /**
+     * Find viewable papers (public papers)
+     */
+    Page<ResearchPaper> findByViewableTrue(Pageable pageable);
+    List<ResearchPaper> findByViewableTrue();
+    
+    /**
+     * Find viewable papers by department
+     */
+    Page<ResearchPaper> findByViewableTrueAndDepartmentContainingIgnoreCase(String department, Pageable pageable);
+    List<ResearchPaper> findByViewableTrueAndDepartmentContainingIgnoreCase(String department);
+    
+    /**
+     * Find viewable papers by search in title, author, abstract
+     */
+    List<ResearchPaper> findByViewableTrueAndTitleContainingIgnoreCaseOrAuthorContainingIgnoreCaseOrAbstractTextContainingIgnoreCase(
+        String title, String author, String abstractText);
+    
+    /**
+     * Search viewable papers by title, author, or keywords
+     */
+    @Query("{ 'viewable': true, $or: [ " +
+           "{ 'title': { $regex: ?0, $options: 'i' } }, " +
+           "{ 'author': { $regex: ?0, $options: 'i' } }, " +
+           "{ 'department': { $regex: ?0, $options: 'i' } }, " +
+           "{ 'keywords': { $regex: ?0, $options: 'i' } }, " +
+           "{ 'abstractText': { $regex: ?0, $options: 'i' } } ] }")
+    Page<ResearchPaper> findViewablePapersBySearchTerm(String searchTerm, Pageable pageable);
+    
+    /**
+     * Search viewable papers by department and search term
+     */
+    @Query("{ 'viewable': true, 'department': { $regex: ?0, $options: 'i' }, $or: [ " +
+           "{ 'title': { $regex: ?1, $options: 'i' } }, " +
+           "{ 'author': { $regex: ?1, $options: 'i' } }, " +
+           "{ 'keywords': { $regex: ?1, $options: 'i' } }, " +
+           "{ 'abstractText': { $regex: ?1, $options: 'i' } } ] }")
+    Page<ResearchPaper> findViewablePapersByDepartmentAndSearchTerm(String department, String searchTerm, Pageable pageable);
+    
+    /**
+     * Find viewable papers by institution
+     */
+    Page<ResearchPaper> findByViewableTrueAndInstitutionContainingIgnoreCase(String institution, Pageable pageable);
+    
+    /**
+     * Count viewable papers
+     */
+    long countByViewableTrue();
 }

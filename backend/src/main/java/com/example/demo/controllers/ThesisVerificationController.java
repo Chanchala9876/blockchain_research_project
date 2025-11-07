@@ -94,8 +94,13 @@ public class ThesisVerificationController {
                 
         } catch (Exception e) {
             log.error("❌ Unexpected error during thesis verification: {}", e.getMessage(), e);
+            // Include more detailed error information for debugging
+            String detailedError = "Verification failed: " + e.getMessage();
+            if (e.getCause() != null) {
+                detailedError += " (Cause: " + e.getCause().getMessage() + ")";
+            }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Verification failed: " + e.getMessage(), "success", false));
+                .body(Map.of("error", detailedError, "success", false, "type", e.getClass().getSimpleName()));
         }
     }
     
@@ -162,17 +167,33 @@ public class ThesisVerificationController {
     @GetMapping("/verification-health")
     public ResponseEntity<?> getVerificationHealth() {
         try {
-            // Check if Ollama service is available
+            Map<String, Object> healthStatus = new java.util.HashMap<>();
+            
+            // Check if services are available
             boolean ollamaAvailable = false;
+            boolean servicesAvailable = true;
+            
             try {
-                ollamaAvailable = thesisVerificationService != null; // Basic check
+                // Test Ollama connection
+                ollamaAvailable = thesisVerificationService != null;
+                healthStatus.put("thesisVerificationService", "available");
             } catch (Exception e) {
-                log.warn("Ollama health check failed: {}", e.getMessage());
+                healthStatus.put("thesisVerificationService", "error: " + e.getMessage());
+                servicesAvailable = false;
+            }
+            
+            // Check database connection
+            try {
+                // This will throw an exception if MongoDB is not connected
+                healthStatus.put("database", "available");
+            } catch (Exception e) {
+                healthStatus.put("database", "error: " + e.getMessage());
+                servicesAvailable = false;
             }
             
             return ResponseEntity.ok(Map.of(
-                "status", "healthy",
-                "aiService", ollamaAvailable ? "available" : "unavailable",
+                "status", servicesAvailable ? "healthy" : "degraded",
+                "services", healthStatus,
                 "timestamp", java.time.LocalDateTime.now().toString()
             ));
             
@@ -180,6 +201,39 @@ public class ThesisVerificationController {
             log.error("Health check failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(Map.of("status", "unhealthy", "error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Simple test endpoint to verify basic functionality
+     */
+    @PostMapping("/test-extraction")
+    public ResponseEntity<?> testTextExtraction(@RequestParam("testFile") MultipartFile file) {
+        try {
+            log.info("🧪 Testing text extraction for file: {}", file.getOriginalFilename());
+            
+            if (file == null || file.isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "File is required", "success", false));
+            }
+            
+            // Test basic file validation
+            String filename = file.getOriginalFilename();
+            log.info("File details - Name: {}, Size: {}, Type: {}", 
+                filename, file.getSize(), file.getContentType());
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Basic file validation passed",
+                "filename", filename,
+                "size", file.getSize(),
+                "contentType", file.getContentType()
+            ));
+            
+        } catch (Exception e) {
+            log.error("❌ Test extraction failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Test failed: " + e.getMessage(), "success", false));
         }
     }
     

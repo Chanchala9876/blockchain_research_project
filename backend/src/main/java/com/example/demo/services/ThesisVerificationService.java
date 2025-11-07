@@ -39,6 +39,9 @@ public class ThesisVerificationService {
     @Autowired
     private FabricGatewayService fabricGatewayService;
     
+    @Autowired
+    private AIDetectionService aiDetectionService;
+    
     /**
      * Verify thesis against existing papers in database (backward compatibility)
      */
@@ -53,26 +56,34 @@ public class ThesisVerificationService {
         log.info("Starting thesis verification for: {} by {} (User Type: {})", request.getTitle(), request.getAuthor(), userType);
         
         try {
+            log.info("Step 1: Validating file...");
             // Step 1: Validate file
             validateFile(file);
+            log.info("Step 1: File validation passed");
             
+            log.info("Step 2: Generating file hash...");
             // Step 2: Generate file hash
             String fileHash = generateFileHash(file.getBytes());
             request.setFileHash(fileHash);
             request.setFileName(file.getOriginalFilename());
             request.setFileSize(file.getSize());
+            log.info("Step 2: File hash generated: {}", fileHash);
             
+            log.info("Step 3: Checking for exact file match...");
             // Step 3: Check for exact file match (for reference, but don't skip AI analysis)
             Optional<ResearchPaper> exactFileMatch = researchPaperRepository.findByFileHash(fileHash);
             if (exactFileMatch.isPresent()) {
                 log.info("Found exact file hash match: {}", exactFileMatch.get().getTitle());
                 // Still proceed with AI analysis to ensure comprehensive verification
             }
+            log.info("Step 3: Exact match check completed");
             
+            log.info("Step 4: Extracting text from document...");
             // Step 4: Extract text from document (PDF or DOCX)
             String documentText = documentTextExtractorService.extractTextFromDocument(file);
             log.info("Extracted {} characters from document", documentText.length());
             
+            log.info("Step 4.5: Checking for nearly identical content...");
             // Step 4.5: Check for nearly identical content (only for 95%+ similarity)
             // This is for truly identical content - small changes should go through AI analysis
             String contentHash = generateContentHash(documentText);
@@ -81,15 +92,15 @@ public class ThesisVerificationService {
                 log.warn("🚨 NEARLY IDENTICAL CONTENT DETECTED: Very high similarity (95%+) found");
                 return createIdenticalContentResponse(identicalMatch.get());
             }
+            log.info("Step 4.5: Nearly identical content check completed");
             
-            // Step 5: Generate embeddings
-            if (!ollamaEmbeddingService.isOllamaAvailable()) {
-                return new ThesisVerificationResponse(false, 
-                    "AI verification service is currently unavailable. Please try again later.");
-            }
-            
+            log.info("Step 5: Generating embeddings...");
+            // Step 5: Generate embeddings (with fallback if Ollama unavailable)
             List<Double> titleEmbedding = ollamaEmbeddingService.generateTitleEmbedding(request.getTitle());
             List<Double> documentEmbedding = ollamaEmbeddingService.generateDocumentEmbedding(documentText);
+            
+            log.info("Generated embeddings - Title: {} dims, Document: {} dims", 
+                titleEmbedding.size(), documentEmbedding.size());
             
             // Step 6: Compare with existing papers
             List<ResearchPaper> papersWithEmbeddings = researchPaperRepository.findPapersWithEmbeddings();
@@ -97,16 +108,27 @@ public class ThesisVerificationService {
             
             if (papersWithEmbeddings.isEmpty()) {
                 // Generate proper report even when database is empty
+                // For empty database, still run AI detection
+                AIDetectionService.AIDetectionResult aiDetectionResult = 
+                    aiDetectionService.analyzeForAIContent(documentText, request.getTitle(), request.getAbstractText());
+                
                 ThesisVerificationResponse.AIAnalysis aiAnalysis = 
                     new ThesisVerificationResponse.AIAnalysis(0.0, 0.0, 0.0);
                 aiAnalysis.setMatchedPapersCount(0);
                 aiAnalysis.setTopMatches(new ArrayList<>());
                 
+                // Add AI detection results
+                aiAnalysis.setAiDetectionScore(aiDetectionResult.getAiProbabilityPercentage());
+                aiAnalysis.setAiDetectionConclusion(aiDetectionResult.getConclusion());
+                aiAnalysis.setAiDetectionIndicators(aiDetectionResult.getIndicators());
+                
                 ThesisVerificationResponse response = new ThesisVerificationResponse(
                     false, null, 0.0, "FIRST_SUBMISSION", 0.0, aiAnalysis);
-                response.setMessage("✅ VERIFICATION COMPLETE: Database contains no prior submissions for comparison. " +
-                    "Similarity Score: 0.0% | Plagiarism Risk: 0% | " +
-                    "Status: First submission - No conflicts detected.");
+                
+                String aiInfo = String.format("AI Detection: %.1f%% probability", aiDetectionResult.getAiProbabilityPercentage());
+                response.setMessage(String.format("✅ VERIFICATION COMPLETE: Database contains no prior submissions for comparison. " +
+                    "Similarity Score: 0.0%% | Plagiarism Risk: 0%% | %s | " +
+                    "Status: First submission - No conflicts detected.", aiInfo));
                 
                 return response;
             }
@@ -122,8 +144,16 @@ public class ThesisVerificationService {
                 log.info("🔍 AI Analysis Result: No significant similarities found");
             }
             
-            // Step 8: Generate verification response with role-based details
-            return createVerificationResponse(request, bestMatch, papersWithEmbeddings.size(), userType);
+            // Step 8: Perform AI detection analysis
+            log.info("🤖 Starting AI content detection analysis...");
+            AIDetectionService.AIDetectionResult aiDetectionResult = 
+                aiDetectionService.analyzeForAIContent(documentText, request.getTitle(), request.getAbstractText());
+            
+            log.info("🤖 AI Detection completed: {}% probability of AI assistance", 
+                    Math.round(aiDetectionResult.getAiProbabilityPercentage()));
+            
+            // Step 9: Generate verification response with role-based details and AI detection
+            return createVerificationResponse(request, bestMatch, papersWithEmbeddings.size(), userType, aiDetectionResult);
             
         } catch (Exception e) {
             log.error("Error during thesis verification: {}", e.getMessage(), e);
@@ -233,32 +263,44 @@ public class ThesisVerificationService {
                 double adjustedContentSim = contentSim;
                 if (isExactTitle || titleStringSimiarity >= 95.0) {
                     // Exact/near-exact title match significantly increases plagiarism concerns
-                    adjustedContentSim = Math.max(contentSim, 90.0);
+                    adjustedContentSim = Math.max(contentSim, 95.0);
                     exactTitleMatch = true;
                     log.warn("⚠️ EXACT TITLE MATCH detected: '{}' vs '{}'", request.getTitle(), paper.getTitle());
                 } else if (titleStringSimiarity >= 85.0) {
-                    // Very similar titles
-                    adjustedContentSim = Math.max(contentSim, Math.min(95.0, contentSim + 20.0));
+                    // Very similar titles - even with different abstracts, this is suspicious
+                    adjustedContentSim = Math.max(contentSim, Math.min(95.0, contentSim + 25.0));
                     log.warn("⚠️ VERY SIMILAR TITLE detected: '{}' vs '{}'", request.getTitle(), paper.getTitle());
+                } else if (titleStringSimiarity >= 75.0) {
+                    // Moderately similar titles - boost content similarity
+                    adjustedContentSim = Math.max(contentSim, Math.min(90.0, contentSim + 15.0));
+                    log.warn("⚠️ SIMILAR TITLE detected: '{}' vs '{}'", request.getTitle(), paper.getTitle());
                 }
                 
                 // Enhanced combined similarity calculation
-                // If title is very similar, give it more weight
-                double titleWeight = titleStringSimiarity >= 85.0 ? 0.5 : 0.3;
-                double contentWeight = titleStringSimiarity >= 85.0 ? 0.5 : 0.7;
+                // If title is very similar, give it more weight and be more aggressive
+                double titleWeight = titleStringSimiarity >= 85.0 ? 0.6 : 0.3;  // Increased weight for similar titles
+                double contentWeight = titleStringSimiarity >= 85.0 ? 0.4 : 0.7;
                 
                 double combinedSimilarity = similarityService.calculateCombinedSimilarity(
                     titleEmbedding, paper.getTitleEmbedding(),
                     documentEmbedding, paper.getDocumentEmbedding(),
                     titleWeight, contentWeight);
                 
-                // Use adjusted content similarity for final calculation
-                if (titleStringSimiarity >= 85.0) {
+                // Use adjusted content similarity for final calculation when titles are similar
+                if (titleStringSimiarity >= 75.0) {
                     combinedSimilarity = (titleStringSimiarity * titleWeight + adjustedContentSim * contentWeight);
                 }
                 
-                // Add to top matches if similarity is significant
-                if (combinedSimilarity > 30.0 || titleStringSimiarity >= 85.0) {
+                // Additional boost for admin duplicate detection - be more strict
+                if (titleStringSimiarity >= 80.0 && contentSim >= 50.0) {
+                    // Even moderate content similarity with high title similarity is concerning for admin uploads
+                    combinedSimilarity = Math.max(combinedSimilarity, 85.0);
+                    log.warn("⚠️ ADMIN DUPLICATE ALERT: Title {}% + Content {}% = Combined {}%", 
+                            titleStringSimiarity, contentSim, combinedSimilarity);
+                }
+                
+                // Add to top matches if similarity is significant (lowered threshold for admin detection)
+                if (combinedSimilarity > 25.0 || titleStringSimiarity >= 75.0) {
                     ThesisVerificationResponse.SimilarPaper similarPaper = 
                         new ThesisVerificationResponse.SimilarPaper(
                             paper.getId(), paper.getTitle(), paper.getAuthor(), combinedSimilarity);
@@ -326,12 +368,13 @@ public class ThesisVerificationService {
     }
     
     /**
-     * Create verification response based on AI similarity analysis
+     * Create verification response based on AI similarity analysis and AI detection
      */
     private ThesisVerificationResponse createVerificationResponse(ThesisVerificationRequest request,
                                                                 SimilarityResult bestMatch,
                                                                 int totalPapersCompared,
-                                                                String userType) {
+                                                                String userType,
+                                                                AIDetectionService.AIDetectionResult aiDetectionResult) {
         
         // Check for exact title match first
         if (bestMatch.exactTitleMatch || bestMatch.bestTitleStringSimilarity >= 95.0) {
@@ -345,6 +388,11 @@ public class ThesisVerificationService {
             aiAnalysis.setMatchedPapersCount(totalPapersCompared);
             aiAnalysis.setTopMatches(bestMatch.topMatches.size() > 5 ? 
                 bestMatch.topMatches.subList(0, 5) : bestMatch.topMatches);
+            
+            // Add AI detection results
+            aiAnalysis.setAiDetectionScore(aiDetectionResult.getAiProbabilityPercentage());
+            aiAnalysis.setAiDetectionConclusion(aiDetectionResult.getConclusion());
+            aiAnalysis.setAiDetectionIndicators(aiDetectionResult.getIndicators());
             
             // For exact title match, plagiarism score should be very high (at least 90%)
             double plagiarismScore = Math.max(90.0, bestMatch.bestSimilarity);
@@ -379,6 +427,11 @@ public class ThesisVerificationService {
                     actualSimilarity / 100.0, 0.0, actualSimilarity / 100.0);
             aiAnalysis.setMatchedPapersCount(totalPapersCompared);
             aiAnalysis.setTopMatches(bestMatch.topMatches);
+            
+            // Add AI detection results
+            aiAnalysis.setAiDetectionScore(aiDetectionResult.getAiProbabilityPercentage());
+            aiAnalysis.setAiDetectionConclusion(aiDetectionResult.getConclusion());
+            aiAnalysis.setAiDetectionIndicators(aiDetectionResult.getIndicators());
             
             // Always generate professional report with 0% plagiarism for original work
             ThesisVerificationResponse response = new ThesisVerificationResponse(
@@ -431,14 +484,19 @@ public class ThesisVerificationService {
         aiAnalysis.setTopMatches(bestMatch.topMatches.size() > 5 ? 
             bestMatch.topMatches.subList(0, 5) : bestMatch.topMatches);
         
+        // Add AI detection results
+        aiAnalysis.setAiDetectionScore(aiDetectionResult.getAiProbabilityPercentage());
+        aiAnalysis.setAiDetectionConclusion(aiDetectionResult.getConclusion());
+        aiAnalysis.setAiDetectionIndicators(aiDetectionResult.getIndicators());
+        
         boolean isVerified = bestMatch.bestSimilarity >= 75.0; // High similarity threshold
         
         ThesisVerificationResponse response = new ThesisVerificationResponse(
             isVerified, bestMatch.bestMatchPaper, bestMatch.bestSimilarity, 
             matchType, plagiarismScore, aiAnalysis);
         
-        // Role-based warning messages
-        response.setMessage(generateRoleBasedMessage(bestMatch, plagiarismScore, isVerified, userType));
+        // Role-based warning messages with AI detection
+        response.setMessage(generateRoleBasedMessage(bestMatch, plagiarismScore, isVerified, userType, aiDetectionResult));
         
         return response;
     }
@@ -663,60 +721,63 @@ public class ThesisVerificationService {
     }
     
     /**
-     * Generate role-based verification message
+     * Generate role-based verification message with AI detection results
      */
-    private String generateRoleBasedMessage(SimilarityResult bestMatch, double plagiarismScore, boolean isVerified, String userType) {
+    private String generateRoleBasedMessage(SimilarityResult bestMatch, double plagiarismScore, boolean isVerified, String userType, AIDetectionService.AIDetectionResult aiDetectionResult) {
         boolean isProfessor = "PROFESSOR".equalsIgnoreCase(userType);
         ResearchPaper matchedPaper = bestMatch.bestMatchPaper;
+        
+        // Format AI detection info
+        String aiInfo = String.format("AI Detection: %.1f%% probability", aiDetectionResult.getAiProbabilityPercentage());
         
         if (plagiarismScore >= 95.0) {
             if (isProfessor) {
                 return String.format("🚨 SEVERE PLAGIARISM DETECTED: %.1f%% similarity with '%s' by %s from %s (%s). " +
-                    "This appears to be copied or nearly identical content!", 
+                    "This appears to be copied or nearly identical content! | %s", 
                     bestMatch.bestSimilarity, matchedPaper.getTitle(), matchedPaper.getAuthor(), 
-                    matchedPaper.getInstitution(), matchedPaper.getDepartment());
+                    matchedPaper.getInstitution(), matchedPaper.getDepartment(), aiInfo);
             } else {
-                return String.format("🚨 SEVERE PLAGIARISM DETECTED: Similarity Score: %.1f%% | Plagiarism Risk: %.1f%% | " +
+                return String.format("🚨 SEVERE PLAGIARISM DETECTED: Similarity Score: %.1f%% | Plagiarism Risk: %.1f%% | %s | " +
                     "Status: Nearly identical content found. This appears to be copied material.", 
-                    bestMatch.bestSimilarity, plagiarismScore);
+                    bestMatch.bestSimilarity, plagiarismScore, aiInfo);
             }
         } else if (plagiarismScore >= 85.0) {
             if (isProfessor) {
                 return String.format("⚠️ HIGH PLAGIARISM RISK: %.1f%% similarity detected with '%s' by %s from %s. " +
-                    "Significant overlap found. Department: %s | Plagiarism Score: %.1f%%", 
+                    "Significant overlap found. Department: %s | Plagiarism Score: %.1f%% | %s", 
                     bestMatch.bestSimilarity, matchedPaper.getTitle(), matchedPaper.getAuthor(), 
-                    matchedPaper.getInstitution(), matchedPaper.getDepartment(), plagiarismScore);
+                    matchedPaper.getInstitution(), matchedPaper.getDepartment(), plagiarismScore, aiInfo);
             } else {
-                return String.format("⚠️ HIGH PLAGIARISM RISK: Similarity Score: %.1f%% | Plagiarism Risk: %.1f%% | " +
+                return String.format("⚠️ HIGH PLAGIARISM RISK: Similarity Score: %.1f%% | Plagiarism Risk: %.1f%% | %s | " +
                     "Status: Significant overlap detected with existing research", 
-                    bestMatch.bestSimilarity, plagiarismScore);
+                    bestMatch.bestSimilarity, plagiarismScore, aiInfo);
             }
         } else if (plagiarismScore >= 70.0) {
             if (isProfessor) {
                 return String.format("⚠️ MODERATE PLAGIARISM RISK: %.1f%% similarity with '%s' by %s (%s). " +
-                    "Please review for potential plagiarism. Institution: %s | Score: %.1f%%", 
+                    "Please review for potential plagiarism. Institution: %s | Score: %.1f%% | %s", 
                     bestMatch.bestSimilarity, matchedPaper.getTitle(), matchedPaper.getAuthor(), 
-                    matchedPaper.getDepartment(), matchedPaper.getInstitution(), plagiarismScore);
+                    matchedPaper.getDepartment(), matchedPaper.getInstitution(), plagiarismScore, aiInfo);
             } else {
-                return String.format("⚠️ MODERATE PLAGIARISM RISK: Similarity Score: %.1f%% | Plagiarism Risk: %.1f%% | " +
+                return String.format("⚠️ MODERATE PLAGIARISM RISK: Similarity Score: %.1f%% | Plagiarism Risk: %.1f%% | %s | " +
                     "Status: Moderate overlap detected - please review content carefully", 
-                    bestMatch.bestSimilarity, plagiarismScore);
+                    bestMatch.bestSimilarity, plagiarismScore, aiInfo);
             }
         } else if (isVerified) {
             if (isProfessor) {
                 return String.format("📊 SIMILARITY DETECTED: %.1f%% similarity with existing research '%s' by %s from %s. " +
-                    "Department: %s | Plagiarism Score: %.1f%% | Recommended: Review for citations and references", 
+                    "Department: %s | Plagiarism Score: %.1f%% | %s | Recommended: Review for citations and references", 
                     bestMatch.bestSimilarity, matchedPaper.getTitle(), matchedPaper.getAuthor(), 
-                    matchedPaper.getInstitution(), matchedPaper.getDepartment(), plagiarismScore);
+                    matchedPaper.getInstitution(), matchedPaper.getDepartment(), plagiarismScore, aiInfo);
             } else {
-                return String.format("📊 SIMILARITY DETECTED: Similarity Score: %.1f%% | Plagiarism Risk: %.1f%% | " +
+                return String.format("📊 SIMILARITY DETECTED: Similarity Score: %.1f%% | Plagiarism Risk: %.1f%% | %s | " +
                     "Status: Some similarity found with existing research", 
-                    bestMatch.bestSimilarity, plagiarismScore);
+                    bestMatch.bestSimilarity, plagiarismScore, aiInfo);
             }
         } else {
-            return String.format("✅ LOW SIMILARITY: Similarity Score: %.1f%% | Plagiarism Risk: %.1f%% | " +
+            return String.format("✅ LOW SIMILARITY: Similarity Score: %.1f%% | Plagiarism Risk: %.1f%% | %s | " +
                 "Status: Minimal overlap detected - appears to be largely original work", 
-                bestMatch.bestSimilarity, plagiarismScore);
+                bestMatch.bestSimilarity, plagiarismScore, aiInfo);
         }
     }
 }

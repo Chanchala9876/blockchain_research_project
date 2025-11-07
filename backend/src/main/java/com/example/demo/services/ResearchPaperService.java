@@ -157,22 +157,10 @@ public class ResearchPaperService {
             log.warn("Ollama service not available, skipping embedding generation");
         }
         
-        // Store critical information on blockchain FIRST
+        // REMOVED: Direct blockchain submission - now handled through multi-admin approval workflow
+        // Blockchain submission will only happen after all admins approve via PendingThesisService
         String blockchainTransactionId = null;
-        try {
-            log.info("Storing paper record on blockchain...");
-            blockchainTransactionId = fabricGatewayService.createPaperRecord(
-                    author,           // studentId (using author as student)
-                    fileHash,         // paperHash
-                    author,           // author name
-                    uploadedBy,       // authorId (admin who uploaded)
-                    LocalDateTime.now().toLocalDate().toString() // paperDate
-            );
-            log.info("Successfully stored on blockchain with transaction ID: {}", blockchainTransactionId);
-        } catch (Exception e) {
-            log.error("Failed to store on blockchain, continuing with database only: {}", e.getMessage());
-        }
-
+        
         // Create ResearchPaper entity with auto-assigned institute
         ResearchPaper researchPaper = ResearchPaper.builder()
                 .title(title)
@@ -456,5 +444,31 @@ public class ResearchPaperService {
      */
     public List<ResearchPaper> getAllPapersWithEmbeddings() {
         return researchPaperRepository.findPapersWithEmbeddings();
+    }
+    
+    /**
+     * Update paper viewability status (admin function)
+     */
+    public boolean updatePaperViewability(String paperId, boolean viewable) {
+        log.info("Updating paper {} viewability to: {}", paperId, viewable);
+        
+        try {
+            Optional<ResearchPaper> paperOpt = researchPaperRepository.findById(paperId);
+            
+            if (paperOpt.isPresent()) {
+                ResearchPaper paper = paperOpt.get();
+                paper.setViewable(viewable);
+                researchPaperRepository.save(paper);
+                
+                log.info("Successfully updated paper {} viewability to: {}", paperId, viewable);
+                return true;
+            } else {
+                log.warn("Paper with ID {} not found for viewability update", paperId);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("Error updating paper {} viewability", paperId, e);
+            return false;
+        }
     }
 }

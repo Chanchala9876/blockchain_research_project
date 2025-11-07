@@ -8,6 +8,7 @@ import com.example.demo.repositories.UserRepository;
 import com.example.demo.repositories.ProfessorRepository;
 import com.example.demo.repositories.AdminRepository;
 import com.example.demo.repositories.InstituteRepository;
+import com.example.demo.repositories.ResearchPaperRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,15 +27,17 @@ public class DataInitializer {
     private final ProfessorRepository professorRepository;
     private final AdminRepository adminRepository;
     private final InstituteRepository instituteRepository;
+    private final ResearchPaperRepository researchPaperRepository;
     private final PasswordEncoder passwordEncoder;
     
     public DataInitializer(UserRepository userRepository, ProfessorRepository professorRepository,
                           AdminRepository adminRepository, InstituteRepository instituteRepository,
-                          PasswordEncoder passwordEncoder) {
+                          ResearchPaperRepository researchPaperRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.professorRepository = professorRepository;
         this.adminRepository = adminRepository;
         this.instituteRepository = instituteRepository;
+        this.researchPaperRepository = researchPaperRepository;
         this.passwordEncoder = passwordEncoder;
     }
     
@@ -45,6 +48,7 @@ public class DataInitializer {
             initializeAdmins();
             initializeUsers();
             initializeProfessors();
+            updateExistingPapersViewability();
         } catch (Exception e) {
             log.error("Error during data initialization", e);
         }
@@ -463,5 +467,44 @@ public class DataInitializer {
                 log.info("Updated admin {} with institute ID: {}", email, instituteId);
             }
         });
+    }
+    
+    /**
+     * Update existing research papers to be viewable by default
+     * This ensures all papers are accessible via the public API
+     */
+    private void updateExistingPapersViewability() {
+        log.info("Checking and updating existing papers viewability status...");
+        
+        try {
+            // Find all papers and ensure they are viewable
+            var allPapers = researchPaperRepository.findAll();
+            int updatedCount = 0;
+            
+            for (var paper : allPapers) {
+                // Set to true if null or false (as requested by user - all papers should be viewable)
+                if (paper.getViewable() == null || !paper.getViewable()) {
+                    paper.setViewable(true);
+                    researchPaperRepository.save(paper);
+                    updatedCount++;
+                    log.debug("Updated paper '{}' to be viewable", paper.getTitle());
+                }
+            }
+            
+            if (updatedCount > 0) {
+                log.info("Updated {} papers to be publicly viewable", updatedCount);
+            } else {
+                log.info("All papers already have viewability status set to true");
+            }
+            
+            // Log statistics
+            long totalPapers = researchPaperRepository.count();
+            long viewablePapers = researchPaperRepository.countByViewableTrue();
+            
+            log.info("Paper visibility statistics - Total: {}, Viewable: {}", totalPapers, viewablePapers);
+            
+        } catch (Exception e) {
+            log.error("Error updating papers viewability status", e);
+        }
     }
 }

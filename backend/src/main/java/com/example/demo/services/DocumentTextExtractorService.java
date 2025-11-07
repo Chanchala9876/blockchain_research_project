@@ -50,28 +50,34 @@ public class DocumentTextExtractorService {
         
         String extractedText;
         
-        switch (extension) {
-            case "pdf":
-                extractedText = extractTextFromPDF(file);
-                break;
-            case "docx":
-                extractedText = extractTextFromDOCX(file);
-                break;
-            case "doc":
-                throw new IOException("Legacy DOC format is not supported. Please convert to DOCX format.");
-            default:
-                throw new IOException("Unsupported file format: " + extension);
+        try {
+            switch (extension) {
+                case "pdf":
+                    extractedText = extractTextFromPDF(file);
+                    break;
+                case "docx":
+                    extractedText = extractTextFromDOCX(file);
+                    break;
+                case "doc":
+                    throw new IOException("Legacy DOC format is not supported. Please convert to DOCX format.");
+                default:
+                    throw new IOException("Unsupported file format: " + extension);
+            }
+            
+            // Clean and validate extracted text
+            extractedText = cleanText(extractedText);
+            
+            if (extractedText.isEmpty()) {
+                throw new IOException("No text content could be extracted from the document");
+            }
+            
+            log.info("✅ Successfully extracted {} characters from {}", extractedText.length(), filename);
+            return extractedText;
+            
+        } catch (Exception e) {
+            log.error("❌ Error extracting text from {}: {}", filename, e.getMessage());
+            throw new IOException("Failed to extract text from document: " + e.getMessage(), e);
         }
-        
-        // Clean and validate extracted text
-        extractedText = cleanText(extractedText);
-        
-        if (extractedText.isEmpty()) {
-            throw new IOException("No text content could be extracted from the document");
-        }
-        
-        log.info("✅ Successfully extracted {} characters from {}", extractedText.length(), filename);
-        return extractedText;
     }
     
     /**
